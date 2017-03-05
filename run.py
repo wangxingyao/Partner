@@ -29,10 +29,22 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        print(request.form['username'])
-        print(request.form['password'])
-        return render_template('index.html')
+        if request.form['submit'] == 'Sign in':
+            # 用户登录验证
+            return redirect(url_for('index'))
+        elif request.form['submit'] == 'Sign up':
+            # 用户注册
+            print('用户注册')
+            pass
+            return redirect(url_for('join'))
+        else:
+            pass
     return render_template('login.html')
+
+
+@app.route('/join', methods=['GET', 'POST'])
+def join():
+    return render_template('join.html')
 
 
 @app.route('/add/<name>/<email>')
