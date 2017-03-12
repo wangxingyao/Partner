@@ -11,10 +11,11 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     SECRET_KEY = 'This is a hard to guess string'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
-    FLASKY_MAIL_SUBJECT_PREFIX = '[伴侣网]'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    FLASKY_MAIL_SUBJECT_PREFIX = '[刚好遇见你]'
     FLASKY_MAIL_SENDER = 'partner_noreply@163.com'
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    FLASKY_POSTS_PER_PAGE = 20
 
     @staticmethod
     def init_app(app):
