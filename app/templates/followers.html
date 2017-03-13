@@ -13,10 +13,10 @@
     {% if follow.user != user %}
     <tr>
         <td>
-
-
-
-
+            <a href="{{ url_for('.user', username = follow.user.username) }}">
+                <img class="img-rounded" src="{{ follow.user.gravatar(size=32) }}">
+                {{ follow.user.username }}
+            </a>
         </td>
         <td>{{ moment(follow.timestamp).format('L') }}</td>
     </tr>
