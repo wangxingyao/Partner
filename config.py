@@ -12,12 +12,14 @@ class Config:
     SECRET_KEY = 'This is a hard to guess string'
     SQLALCHEMY_COMMIT_ON_TEARDOWN = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_RECORD_QUERIES = True
     FLASKY_MAIL_SUBJECT_PREFIX = '[刚好遇见你]'
     FLASKY_MAIL_SENDER = 'partner_noreply@163.com'
     FLASKY_ADMIN = os.environ.get('FLASKY_ADMIN')
     FLASKY_POSTS_PER_PAGE = 20
     FLASKY_FOLLOWERS_PER_PAGE = 50
     FLASKY_COMMENTS_PER_PAGE = 30
+    FLASKY_SLOW_DB_QUERY_TIME = 0.5
 
     @staticmethod
     def init_app(app):
@@ -37,6 +39,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data-test.sqlite')
+    WTF_CSRF_ENABLE = False
 
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
