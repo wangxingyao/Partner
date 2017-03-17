@@ -2,9 +2,10 @@
 
 from flask_wtf import FlaskForm
 from flask_pagedown.fields import PageDownField
-from wtforms import StringField, SubmitField, TextAreaField, BooleanField, SelectField
+from wtforms import StringField, SubmitField, TextAreaField, BooleanField, \
+    SelectField, FloatField
 from wtforms import ValidationError
-from wtforms.validators import Required, Length, Email, Regexp
+from wtforms.validators import Required, Length, Email, Regexp, NumberRange
 from ..models import Role, User
 
 class NameForm(FlaskForm):
@@ -55,4 +56,16 @@ class PostForm(FlaskForm):
 
 class CommentForm(FlaskForm):
     body = StringField('', validators=[Required()])
+    submit = SubmitField('Submit')
+
+class AccountForm(FlaskForm):
+    goods = StringField('Goods', validators=[Required()])
+    price = FloatField('Price', validators=[NumberRange(0, 99999999)])
+    use   = SelectField('Use', choices=[(u'吃', u'吃'),
+                                        (u'穿', u'穿'),
+                                        (u'住', u'住'),
+                                        (u'用', u'用'),
+                                        (u'行', u'行'),
+                                        (u'娱', u'娱'),
+                                        (u'其它', u'其它')], validators=[Required()])
     submit = SubmitField('Submit')

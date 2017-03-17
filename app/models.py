@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import hashlib
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
@@ -85,6 +85,7 @@ class User(UserMixin, db.Model):
                                 lazy='dynamic',
                                 cascade='all, delete-orphan')
     comments = db.relationship('Comment', backref='author', lazy='dynamic')
+    bills = db.relationship('Bill', backref='owner', lazy='dynamic')
 
     @staticmethod
     def generate_fake(count=100):
@@ -282,6 +283,46 @@ login_manager.anonymous_user = AnonymousUser
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+class Bill(db.Model):
+    __tablename__ = 'bills'
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.Date, index=True, default=date.today)
+    total = db.Column(db.Float)
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    details = db.relationship('BillDetails', backref='owner', lazy='dynamic')
+
+    def __repr__(self):
+        return '<Bill id:%r, date:%r, total:%r>' % (self.id, self.date, self.total)
+
+    @staticmethod
+    def generate_fake(count=100):
+        from sqlalchemy.exc import IntegrityError
+        from random import seed, randint
+        seed()
+        for i in range(count):
+            b = Bill(total=randint(0, 80),
+                     date=date.today() - timedelta(i))
+            db.session.add(b)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+
+
+
+class BillDetails(db.Model):
+    __tablename__ = 'billdetails'
+    id = db.Column(db.Integer, primary_key=True)
+    goods = db.Column(db.String)
+    price = db.Column(db.Float)
+    use = db.Column(db.String)
+    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
+    owner_id = db.Column(db.Integer, db.ForeignKey('bills.id'))
+
+
+    def __repr__(self):
+        return '<BillDetails goods:%r, price:%r, time:%r, use:%r>' % (self.goods, self.price, self.timestamp, self.use)
 
 
 class Post(db.Model):

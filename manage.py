@@ -8,7 +8,7 @@ if os.environ.get("FLASK_COVERAGE"):
     COV.start()
 
 from app import create_app, db
-from app.models import User, Role, Post
+from app.models import User, Role, Post, Bill, BillDetails
 from flask_script import Manager, Shell
 from flask_migrate import Migrate, MigrateCommand
 
@@ -17,7 +17,8 @@ manager = Manager(app)
 migrate = Migrate(app, db)
 
 def make_shell_context():
-    return dict(app=app, db=db, User=User, Role=Role, Post=Post)
+    return dict(app=app, db=db, User=User, Role=Role, Post=Post, \
+                Bill=Bill, BillDetails=BillDetails)
 manager.add_command('shell', Shell(make_context=make_shell_context))
 manager.add_command('db', MigrateCommand)
 
@@ -75,6 +76,7 @@ def clean_database():
     Role.insert_roles()
     User.generate_fake(100)
     Post.generate_fake(100)
+    Bill.generate_fake(100)
 
 if __name__ == '__main__':
     manager.run()

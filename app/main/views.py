@@ -4,11 +4,13 @@ from flask import render_template, redirect, url_for, abort, flash, \
     current_app, request, make_response
 from flask_login import current_user, login_required
 from flask_sqlalchemy import get_debug_queries
+from datetime import date
 from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, \
-    CommentForm
+    CommentForm, AccountForm
 from .. import db
-from ..models import User, Role, Permission, Post, Comment
+from ..models import User, Role, Permission, Post, Comment, Bill, \
+    BillDetails
 from ..decorators import admin_required, permission_required
 
 
@@ -262,3 +264,52 @@ def server_shutdown():
     shutdown()
     return 'Shutting down...'
 
+
+@main.route('/account/<username>', methods=['GET', 'POST'])
+@login_required
+def account(username):
+    form = AccountForm()
+    if form.validate_on_submit():
+        bill = Bill.query.filter_by(date=date.today()).first()
+        if not bill:
+            bill = Bill(total=0,
+                        date=date.today(),
+                        owner=current_user._get_current_object())
+        bill_details = BillDetails(goods=form.goods.data,
+                                   price=form.price.data,
+                                   use  =form.use.data,
+                                   owner=bill)
+        bill.total += float(form.price.data)
+        db.session.add(bill)
+        db.session.add(bill_details)
+        return redirect(url_for('.account', username=username))
+    # bill = Bill.query.filter_by(date=date.today(),
+    #                             owner=current_user._get_current_object()).first()
+    # bill_details = BillDetails.query.filter_by(owner=bill).all()
+    bills = Bill.query.all()
+
+    xAxisList = []
+    yAxisList = []
+    for b in bills[29:0:-1]:
+        xAxisList.append(b.date.day)
+        yAxisList.append(b.total)
+    xAxisList.append(bills[0].date.day)
+    yAxisList.append(bills[0].total)
+    show_what = 'month'
+    show_what = request.cookies.get('show_what')
+    return render_template('account.html', form=form, bills=bills,
+                           show_what=show_what, xAxisList=xAxisList)
+
+@main.route('/show_month')
+@login_required
+def show_month():
+    resp = make_response(redirect(url_for('.account', username=current_user.username)))
+    resp.set_cookie('show_what', 'month', max_age=30*24*60*60)
+    return resp
+
+@main.route('/show_year')
+@login_required
+def show_year():
+    resp = make_response(redirect(url_for('.account', username=current_user.username)))
+    resp.set_cookie('show_what', 'year', max_age=30*24*60*60)
+    return resp
