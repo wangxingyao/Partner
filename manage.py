@@ -76,7 +76,6 @@ def clean_database():
     Role.insert_roles()
     User.generate_fake(100)
     Post.generate_fake(100)
-    Bill.generate_fake(100)
 
 if __name__ == '__main__':
     manager.run()

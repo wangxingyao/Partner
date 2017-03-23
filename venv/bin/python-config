@@ -1,4 +1,4 @@
-#!/home/yaoge/Desktop/partner/venv/bin/python
+#!/home/yaoge/Desktop/LifePartner/venv/bin/python
 
 import sys
 import getopt

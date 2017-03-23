@@ -1,7 +1,7 @@
 #coding:utf-8
 
 from flask import render_template, redirect, url_for, abort, flash, \
-    current_app, request, make_response
+    current_app, request, make_response, session
 from flask_login import current_user, login_required
 from flask_sqlalchemy import get_debug_queries
 from datetime import date
@@ -264,41 +264,96 @@ def server_shutdown():
     shutdown()
     return 'Shutting down...'
 
+@main.route('/account/query', methods=['GET', 'POST'])
+@login_required
+def account_query():
+    if request.method == 'POST':
+        dstr = request.form['date']
+        session['dstr'] = dstr
+    return redirect(url_for('.account', username=current_user.username))
+
+
+
+@main.route('/account/delete')
+@login_required
+def account_delete():
+    bdid = request.args.get('bdid')
+    bd = BillDetails.query.filter_by(id=bdid).first()
+    bill = Bill.query.filter(Bill.details.contains(bd)).first()
+    bill.total -= bd.price
+    db.session.delete(bd)
+    db.session.add(bill)
+    return redirect(url_for('.account', username=current_user.username))
+
 
 @main.route('/account/<username>', methods=['GET', 'POST'])
 @login_required
 def account(username):
+    # today 在此代表当，不一定是今天
+    date_today = date.today()
+    # dstr = request.args.get('dstr')
+    if session['dstr']:
+        dstr = session['dstr']
+        if dstr:
+            ds = dstr.split('-')
+            date_today = date(int(ds[0]),
+                                int(ds[1]),
+                                int(ds[2]))
+
     form = AccountForm()
     if form.validate_on_submit():
-        bill = Bill.query.filter_by(date=date.today()).first()
-        if not bill:
-            bill = Bill(total=0,
-                        date=date.today(),
-                        owner=current_user._get_current_object())
-        bill_details = BillDetails(goods=form.goods.data,
-                                   price=form.price.data,
-                                   use  =form.use.data,
-                                   owner=bill)
-        bill.total += float(form.price.data)
-        db.session.add(bill)
-        db.session.add(bill_details)
-        return redirect(url_for('.account', username=username))
-    # bill = Bill.query.filter_by(date=date.today(),
-    #                             owner=current_user._get_current_object()).first()
-    # bill_details = BillDetails.query.filter_by(owner=bill).all()
-    bills = Bill.query.all()
+        bill_today = Bill.query.filter_by(date=date_today,
+                                          owner=current_user._get_current_object()).first()
+        if not bill_today:
+            bill_today = Bill(total=0,
+                              date=date_today,
+                              owner=current_user._get_current_object())
+        bill_details_today = BillDetails(goods=form.goods.data,
+                                         price=form.price.data,
+                                         use  =form.use.data,
+                                         owner=bill_today)
+        bill_today.total += float(form.price.data)
+        db.session.add(bill_today)
+        db.session.add(bill_details_today)
+        return redirect(url_for('.account', username=current_user.username))
+    bill_today = Bill.query.filter_by(date=date_today,
+                                owner=current_user._get_current_object()).first()
+    bill_all = Bill.query.filter_by(owner=current_user._get_current_object()).all()
 
     xAxisList = []
     yAxisList = []
-    for b in bills[29:0:-1]:
-        xAxisList.append(b.date.day)
-        yAxisList.append(b.total)
-    xAxisList.append(bills[0].date.day)
-    yAxisList.append(bills[0].total)
+    data = []
+    total_month = 0
+    for b in bill_all:
+        data.append((b.date, b.total))
+    data.sort()
+    month_now = date.today().month
+    for b in data[-31::]:
+        xAxisList.append(b[0].day)
+        yAxisList.append(b[1])
+        if b[0].month == month_now:
+            total_month += b[1]
+
+    if len(yAxisList):
+        average = round(float(sum(yAxisList)) / len(yAxisList),1)
+    yAxisAverage = [average for i in range(len(yAxisList))]
+    yAxisPlan = [40 for i in range(len(yAxisList))]
+
+
+    bd_today_all = []
+    if bill_today:
+        bd_today_all = BillDetails.query.filter_by(owner=bill_today).all()
+        total_today = bill_today.total
+    else:
+        total_today = 0
     show_what = 'month'
     show_what = request.cookies.get('show_what')
-    return render_template('account.html', form=form, bills=bills,
-                           show_what=show_what, xAxisList=xAxisList)
+    return render_template('account.html', form=form, show_what=show_what,
+                           bill_all=bill_all, total_today=total_today, today=date.today(),
+                           bd_today_all=bd_today_all, date_today=date_today,
+                           xAxisList=xAxisList, yAxisList=yAxisList,
+                           yAxisAverage=yAxisAverage, yAxisPlan=yAxisPlan,
+                           total_month=total_month)
 
 @main.route('/show_month')
 @login_required

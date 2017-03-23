@@ -301,7 +301,7 @@ class Bill(db.Model):
         from random import seed, randint
         seed()
         for i in range(count):
-            b = Bill(total=randint(0, 80),
+            b = Bill(total=randint(20, 60),
                      date=date.today() - timedelta(i))
             db.session.add(b)
             try:
@@ -317,12 +317,11 @@ class BillDetails(db.Model):
     goods = db.Column(db.String)
     price = db.Column(db.Float)
     use = db.Column(db.String)
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
     owner_id = db.Column(db.Integer, db.ForeignKey('bills.id'))
 
 
     def __repr__(self):
-        return '<BillDetails goods:%r, price:%r, time:%r, use:%r>' % (self.goods, self.price, self.timestamp, self.use)
+        return '<BillDetails id:%r, goods:%r, price:%r, use:%r>' % (self.id, self.goods, self.price, self.use)
 
 
 class Post(db.Model):
