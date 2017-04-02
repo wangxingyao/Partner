@@ -143,6 +143,19 @@ def edit(id):
     form.body.data = post.body
     return render_template('edit_post.html', form=form)
 
+@main.route('/delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete(id):
+    post = Post.query.get_or_404(id)
+    if current_user != post.author and \
+            not current_user.can(Permission.ADMINISTER):
+        abort(403)
+    comment = Comment.query.filter_by(post=post).all()
+    for c in comment:
+        db.session.delete(c)
+    db.session.delete(post)
+    return redirect(url_for('.index'))
+
 @main.route('/follow/<username>')
 @login_required
 @permission_required(Permission.FOLLOW)
@@ -289,7 +302,7 @@ def account_delete():
 @main.route('/account/<username>', methods=['GET', 'POST'])
 @login_required
 def account(username):
-    # today 在此代表当，不一定是今天
+    # today 在此代表当天，不一定是今天
     date_today = date.today()
     # dstr = request.args.get('dstr')
     if session['dstr']:
