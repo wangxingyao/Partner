@@ -5,9 +5,10 @@ from flask import render_template, redirect, url_for, abort, flash, \
 from flask_login import current_user, login_required
 from flask_sqlalchemy import get_debug_queries
 from datetime import date
+import calendar
 from . import main
 from .forms import EditProfileForm, EditProfileAdminForm, PostForm, \
-    CommentForm, AccountForm
+    CommentForm, AccountForm, PlanForm
 from .. import db
 from ..models import User, Role, Permission, Post, Comment, Bill, \
     BillDetails
@@ -285,7 +286,14 @@ def account_query():
         session['dstr'] = dstr
     return redirect(url_for('.account', username=current_user.username))
 
-
+@main.route('/account/plan', methods=['GET', 'POST'])
+@login_required
+def account_plan():
+    if request.method == 'POST':
+        plan = request.form['plan']
+        session['plan'] = plan
+        print (plan)
+    return redirect(url_for('.account', username=current_user.username))
 
 @main.route('/account/delete')
 @login_required
@@ -310,22 +318,33 @@ def account(username):
         if dstr:
             ds = dstr.split('-')
             date_today = date(int(ds[0]),
-                                int(ds[1]),
-                                int(ds[2]))
-
-    form = AccountForm()
-    if form.validate_on_submit():
+                              int(ds[1]),
+                              int(ds[2]))
+    if not current_user.plan:
+        current_user.plan = 1000
+    # if session['plan']:
+    #     plan = session['plan']
+    #     if plan:
+    #         current_user.plan = float(plan)
+    #         print ('================>')
+    #         print (current_user.plan)
+    plform = PlanForm()
+    acform = AccountForm()
+    if plform.plsubmit.data and plform.validate_on_submit():
+        current_user.plan = plform.plan.data
+        return redirect(url_for('.account', username=current_user.username))
+    elif acform.acsubmit.data and acform.validate_on_submit():
         bill_today = Bill.query.filter_by(date=date_today,
                                           owner=current_user._get_current_object()).first()
         if not bill_today:
             bill_today = Bill(total=0,
                               date=date_today,
                               owner=current_user._get_current_object())
-        bill_details_today = BillDetails(goods=form.goods.data,
-                                         price=form.price.data,
-                                         use  =form.use.data,
+        bill_details_today = BillDetails(goods=acform.goods.data,
+                                         price=acform.price.data,
+                                         use  =acform.use.data,
                                          owner=bill_today)
-        bill_today.total += float(form.price.data)
+        bill_today.total += float(acform.price.data)
         db.session.add(bill_today)
         db.session.add(bill_details_today)
         return redirect(url_for('.account', username=current_user.username))
@@ -350,7 +369,10 @@ def account(username):
     if len(yAxisList):
         average = round(float(sum(yAxisList)) / len(yAxisList),1)
     yAxisAverage = [average for i in range(len(yAxisList))]
-    yAxisPlan = [40 for i in range(len(yAxisList))]
+    per_month_days = calendar.monthrange(date.today().year,
+                                         date.today().month)[1]
+    day_plan = round(current_user.plan / per_month_days, 1)
+    yAxisPlan = [day_plan for i in range(len(yAxisList))]
 
 
     bd_today_all = []
@@ -361,12 +383,12 @@ def account(username):
         total_today = 0
     show_what = 'month'
     show_what = request.cookies.get('show_what')
-    return render_template('account.html', form=form, show_what=show_what,
+    return render_template('account.html', acform=acform, plform=plform, show_what=show_what,
                            bill_all=bill_all, total_today=total_today, today=date.today(),
                            bd_today_all=bd_today_all, date_today=date_today,
                            xAxisList=xAxisList, yAxisList=yAxisList,
                            yAxisAverage=yAxisAverage, yAxisPlan=yAxisPlan,
-                           total_month=total_month)
+                           total_month=total_month, user=current_user)
 
 @main.route('/show_month')
 @login_required

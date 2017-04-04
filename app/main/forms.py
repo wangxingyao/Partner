@@ -69,4 +69,9 @@ class AccountForm(FlaskForm):
                                         (u'行', u'行'),
                                         (u'娱', u'娱'),
                                         (u'其它', u'其它')], validators=[Required()])
-    submit = SubmitField('Submit')
+    acsubmit = SubmitField('Submit')
+
+class PlanForm(FlaskForm):
+    plan = FloatField('Set Plan', validators=[Required(), NumberRange(0, 9999)])
+    plsubmit = SubmitField('Submit')
+

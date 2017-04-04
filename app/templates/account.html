@@ -116,7 +116,7 @@
 </div>
 <div class="col-md-4">
     <h3>请添加消费记录</h3>
-    {{ wtf.quick_form(form)  }}
+    {{ wtf.quick_form(acform)  }}
 </div>
 <div class="col-md-4">
     <h3>今天是 {{ today }}</h3>
@@ -125,6 +125,8 @@
         选择日期：<input name="date" type="date"/>
         <input type="submit" value="Go">
     </form>
+    <h3>本月计划 {{ user.plan }} 元</h3>
+    {{ wtf.quick_form(plform)  }}
 </div>
 
 {% endblock %}

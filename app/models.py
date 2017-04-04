@@ -86,6 +86,7 @@ class User(UserMixin, db.Model):
                                 cascade='all, delete-orphan')
     comments = db.relationship('Comment', backref='author', lazy='dynamic')
     bills = db.relationship('Bill', backref='owner', lazy='dynamic')
+    plan = db.Column(db.Float, default=1000)
 
     @staticmethod
     def generate_fake(count=100):
